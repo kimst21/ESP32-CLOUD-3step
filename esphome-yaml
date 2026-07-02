@@ -199,6 +199,7 @@ display:
     update_interval: 1s
     lambda: |-
       it.fill(COLOR_OFF);
+
       float t = id(temp_dht).state;
       float h = id(hum_dht).state;
       float l = id(lux_bh).state;
@@ -208,11 +209,13 @@ display:
       } else {
         it.printf(0, 0, id(font_oled_big), "Temp: %.1f C", t);
       }
+
       if (std::isnan(h)) {
         it.printf(0, 21, id(font_oled_big), "Humi: --.- %%");
       } else {
         it.printf(0, 21, id(font_oled_big), "Humi: %.1f %%", h);
       }
+
       if (std::isnan(l)) {
         it.printf(0, 42, id(font_oled_big), "Lux : ----");
       } else {
@@ -235,19 +238,24 @@ light:
     id: status_strip
     name: "Status LED Strip"
     restore_mode: ALWAYS_ON
+
     effects:
       - addressable_lambda:
           name: "Indicator"
           update_interval: 1s
           lambda: |-
             int b = (int) id(led_brightness).state;
+
             if (b < 0) b = 0;
             if (b > 255) b = 255;
+
             it.all() = Color(0, 0, 0);
+
             // LED 1~5 : 온도 표시, 주황색
             for (int i = 0; i < id(temp_level); i++) {
               it[i] = Color(b, b / 2, 0);
             }
+
             // LED 6~10 : 습도 표시, 파란색
             for (int i = 0; i < id(hum_level); i++) {
               it[5 + i] = Color(0, 0, b);
@@ -259,19 +267,36 @@ interval:
       - lambda: |-
           float t = id(temp_dht).state;
           float h = id(hum_dht).state;
-          if (std::isnan(t) || t < 0) { id(temp_level) = 0; }
-          else if (t <= 10) { id(temp_level) = 1; }
-          else if (t <= 20) { id(temp_level) = 2; }
-          else if (t <= 30) { id(temp_level) = 3; }
-          else if (t <= 40) { id(temp_level) = 4; }
-          else { id(temp_level) = 5; }
 
-          if (std::isnan(h)) { id(hum_level) = 0; }
-          else if (h <= 20) { id(hum_level) = 1; }
-          else if (h <= 40) { id(hum_level) = 2; }
-          else if (h <= 60) { id(hum_level) = 3; }
-          else if (h <= 80) { id(hum_level) = 4; }
-          else { id(hum_level) = 5; }
+          // 온도: 0~10도 1칸, 11~20도 2칸, 21~30도 3칸, 31~40도 4칸, 41도 이상 5칸
+          if (std::isnan(t) || t < 0) {
+            id(temp_level) = 0;
+          } else if (t <= 10) {
+            id(temp_level) = 1;
+          } else if (t <= 20) {
+            id(temp_level) = 2;
+          } else if (t <= 30) {
+            id(temp_level) = 3;
+          } else if (t <= 40) {
+            id(temp_level) = 4;
+          } else {
+            id(temp_level) = 5;
+          }
+
+          // 습도: 5단계, 20% 단위
+          if (std::isnan(h)) {
+            id(hum_level) = 0;
+          } else if (h <= 20) {
+            id(hum_level) = 1;
+          } else if (h <= 40) {
+            id(hum_level) = 2;
+          } else if (h <= 60) {
+            id(hum_level) = 3;
+          } else if (h <= 80) {
+            id(hum_level) = 4;
+          } else {
+            id(hum_level) = 5;
+          }
 
       - light.turn_on:
           id: status_strip
